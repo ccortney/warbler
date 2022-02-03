@@ -125,10 +125,16 @@ class User(db.Model):
         return len(found_user_list) == 1
 
     def is_following(self, other_user):
-        """Is this user following `other_use`?"""
+        """Is this user following `other_user`?"""
 
         found_user_list = [user for user in self.following if user == other_user]
         return len(found_user_list) == 1
+    
+    def is_liked(self, message):
+        """Is this message liked by the user?"""
+
+        liked_messages_list = [msg for msg in self.likes if msg == message]
+        return len(liked_messages_list) == 1
 
     @classmethod
     def signup(cls, username, email, password):

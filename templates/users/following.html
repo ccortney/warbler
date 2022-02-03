@@ -3,7 +3,7 @@
   <div class="col-sm-9">
     <div class="row">
 
-      {% for followed_user in user.following %}
+      {% for followed_user in g.user.following %}
 
         <div class="col-lg-4 col-md-6 col-12">
           <div class="card user-card">
@@ -16,7 +16,9 @@
                   <img src="{{ followed_user.image_url }}" alt="Image for {{ followed_user.username }}" class="card-image">
                   <p>@{{ followed_user.username }}</p>
                 </a>
-                {% if g.user.is_following(followed_user) %}
+                {% if followed_user.id == g.user.id %}
+                  <p>HI</p>
+                {% elif g.user.is_following(followed_user) %}
                   <form method="POST"
                         action="/users/stop-following/{{ followed_user.id }}">
                     <button class="btn btn-primary btn-sm">Unfollow</button>

@@ -81,7 +81,6 @@ def signup():
             return render_template('users/signup.html', form=form)
 
         do_login(user)
-
         return redirect(f"/users/add-details")
 
     else:
@@ -152,7 +151,6 @@ def users_show(user_id):
                 .limit(100)
                 .all())
     return render_template('users/show.html', user=user, messages=messages)
-
 
 @app.route('/users/<int:user_id>/following')
 def show_following(user_id):
@@ -227,7 +225,6 @@ def add_details():
         db.session.commit()
 
         return redirect(f"/users/{g.user.id}")
-
     
     return render_template('users/add_details.html', form=form)
 
@@ -329,7 +326,37 @@ def messages_destroy(message_id):
 ##############################################################################
 # Likes routes:
 
-# /users/add_like/{{ msg.id }}
+@app.route('/users/like/<int:message_id>', methods=["POST"])
+def add_or_remove_like(message_id):
+    """Add a like to a user's message for the currently-logged-in user."""
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    message = Message.query.get_or_404(message_id)
+    if message in g.user.likes:
+        g.user.likes.remove(message)
+    else:
+        g.user.likes.append(message)
+    
+    db.session.commit()
+    return redirect("/")
+
+@app.route('/users/<int:user_id>/likes')
+def show_likes(user_id):
+    """Show all liked messages for the currently-logged-in user."""
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+    
+    user = User.query.get_or_404(user_id)
+    return render_template('users/likes.html', user=user)
+
+
+# show how many characters are left or show error message
+# if remove like from liked messages page, how to keep on that same page
 
 ##############################################################################
 # Homepage and error pages
