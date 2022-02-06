@@ -2,7 +2,7 @@ import os
 
 from flask import Flask, render_template, request, flash, redirect, session, g
 from flask_debugtoolbar import DebugToolbarExtension
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, DataError
 
 from forms import UserAddForm, LoginForm, MessageForm
 from models import db, connect_db, User, Message
@@ -126,6 +126,10 @@ def list_users():
     Can take a 'q' param in querystring to search by that username.
     """
 
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+    
     search = request.args.get('q')
 
     if not search:
@@ -139,6 +143,10 @@ def list_users():
 @app.route('/users/<int:user_id>')
 def users_show(user_id):
     """Show user profile."""
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
 
     user = User.query.get_or_404(user_id)
 
@@ -292,9 +300,15 @@ def messages_add():
     form = MessageForm()
 
     if form.validate_on_submit():
-        msg = Message(text=form.text.data)
-        g.user.messages.append(msg)
-        db.session.commit()
+        try:
+            msg = Message(text=form.text.data)
+            g.user.messages.append(msg)
+            db.session.commit()
+        
+        except DataError:
+            flash("Message can only have 140 characters!", 'danger')
+            db.session.rollback()
+            return render_template('messages/new.html', form=form)
 
         return redirect(f"/users/{g.user.id}")
 
@@ -304,6 +318,10 @@ def messages_add():
 @app.route('/messages/<int:message_id>', methods=["GET"])
 def messages_show(message_id):
     """Show a message."""
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
 
     msg = Message.query.get(message_id)
     return render_template('messages/show.html', message=msg)
@@ -333,7 +351,7 @@ def add_or_remove_like(message_id):
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
-
+    print(f"************************** request.referrer-->{request.referrer}")
     message = Message.query.get_or_404(message_id)
     if message in g.user.likes:
         g.user.likes.remove(message)
@@ -341,7 +359,7 @@ def add_or_remove_like(message_id):
         g.user.likes.append(message)
     
     db.session.commit()
-    return redirect("/")
+    return redirect(request.referrer, code=302)
 
 @app.route('/users/<int:user_id>/likes')
 def show_likes(user_id):
@@ -353,10 +371,6 @@ def show_likes(user_id):
     
     user = User.query.get_or_404(user_id)
     return render_template('users/likes.html', user=user)
-
-
-# show how many characters are left or show error message
-# if remove like from liked messages page, how to keep on that same page
 
 ##############################################################################
 # Homepage and error pages
