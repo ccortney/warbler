@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, flash, redirect, session, g
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError, DataError
 
-from forms import UserAddForm, LoginForm, MessageForm
+from forms import UserAddForm, LoginForm, MessageForm, UserAddDetailsForm
 from models import db, connect_db, User, Message
 
 CURR_USER_KEY = "curr_user"
@@ -222,7 +222,7 @@ def add_details():
         flash("Access unauthorized.", "danger")
         return redirect("/")
     
-    form = UserAddForm()
+    form = UserAddDetailsForm()
 
     if form.validate_on_submit():
         g.user.image_url=form.image_url.data or User.image_url.default.arg,
